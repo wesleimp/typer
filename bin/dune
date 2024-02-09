@@ -1,0 +1,4 @@
+(executable
+ (public_name typer)
+ (name main)
+ (libraries typer_lib minttea leaves spices))
