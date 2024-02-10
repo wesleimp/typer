@@ -1,4 +1,4 @@
-version = 0.26.0
+version = 0.26.1
 profile = conventional
 
 leading-nested-match-parens = false
