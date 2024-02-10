@@ -9,7 +9,6 @@ let init _ = Command.Noop
 
 type model = {
   progress_bar : Progress.t;
-  cursor : int;
   text : string list;
   typed : string list;
 }
@@ -19,25 +18,24 @@ let explode_string s =
   List.map Char.escaped chars
 
 let initial_model =
-  let words = Words.random 5 in
+  let words = Words.random 1 in
   let text = explode_string (String.concat " " words |> String.trim) in
   {
-    cursor = 0;
     text;
     typed = [];
     progress_bar =
       Progress.make ~width:100
-        ~color:(`Plain (Spices.color "#3fa2a3"))
+        ~color:(`Plain (Spices.color "#4776E6"))
         ~trail_char:" " ();
   }
 
+let percentage_of x y = Float.div (float_of_int x) (float_of_int y)
+
 let handle_key_down m key =
   let typed = m.typed @ [ key ] in
-  let amount =
-    float_of_int (List.length typed) /. float_of_int (List.length m.text)
-  in
-  let progress_bar = Progress.set_progress m.progress_bar amount in
-  {progress_bar; cursor = m.cursor + 1; typed; text = m.text}
+  let progress = percentage_of (List.length typed) (List.length m.text) in
+  let progress_bar = Progress.set_progress m.progress_bar progress in
+  {progress_bar; typed; text = m.text}
 
 let update event m =
   match event with
@@ -46,9 +44,39 @@ let update event m =
   | Event.KeyDown (Key k) -> (handle_key_down m k, Command.Noop)
   | _ -> (m, Command.Noop)
 
+let typed_style ch =
+  Spices.(default |> fg (Spices.color "#ffffff") |> build) "%s" ch
+
+let error_style ch =
+  Spices.(
+    default
+    |> fg (Spices.color "#ffffff")
+    |> bg (Spices.color "#ff3333")
+    |> build)
+    "%s" ch
+
+let untyped_style ch =
+  Spices.(default |> fg (Spices.color "#555555") |> build) "%s" ch
+
 let view m =
-  Format.sprintf "\n\n%s\n\n%s\n\n%s\n"
+  let typed_len = List.length m.typed in
+  let remaining = m.text |> List.to_seq |> Seq.drop typed_len |> List.of_seq in
+  let typed =
+    m.typed
+    |> List.mapi (fun i ch ->
+           if String.equal ch (List.nth m.text i) then
+             Format.sprintf "%s" (typed_style ch)
+           else
+             Format.sprintf "%s" (error_style ch))
+    |> String.concat ""
+  in
+  let untyped =
+    remaining
+    |> List.map (fun ch -> Format.sprintf "%s" (untyped_style ch))
+    |> String.concat ""
+  in
+  Format.sprintf "\n\n%s\n\n%s%s\n\n"
     (Progress.view m.progress_bar)
-    (String.concat "" m.text) (String.concat "" m.typed)
+    typed untyped
 
 let () = Minttea.app ~init ~update ~view () |> Minttea.start ~initial_model
