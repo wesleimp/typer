@@ -1,6 +1,3 @@
-(**)
-(* let () = *)
-
 open Minttea
 open Leaves
 open Typer_lib
@@ -29,10 +26,9 @@ let initial_model =
         ~trail_char:" " ();
   }
 
-let percentage_of x y = Float.div (float_of_int x) (float_of_int y)
-
 let handle_key_down m key =
   let typed = m.typed @ [ key ] in
+  let percentage_of x y = Float.div (float_of_int x) (float_of_int y) in
   let progress = percentage_of (List.length typed) (List.length m.text) in
   let progress_bar = Progress.set_progress m.progress_bar progress in
   {progress_bar; typed; text = m.text}
@@ -44,20 +40,6 @@ let update event m =
   | Event.KeyDown (Key k) -> (handle_key_down m k, Command.Noop)
   | _ -> (m, Command.Noop)
 
-let typed_style ch =
-  Spices.(default |> fg (Spices.color "#ffffff") |> build) "%s" ch
-
-let error_style ch =
-  Spices.(
-    default
-    |> fg (Spices.color "#ffffff")
-    |> bg (Spices.color "#ff3333")
-    |> build)
-    "%s" ch
-
-let untyped_style ch =
-  Spices.(default |> fg (Spices.color "#555555") |> build) "%s" ch
-
 let view m =
   let typed_len = List.length m.typed in
   let remaining = m.text |> List.to_seq |> Seq.drop typed_len |> List.of_seq in
@@ -65,14 +47,14 @@ let view m =
     m.typed
     |> List.mapi (fun i ch ->
            if String.equal ch (List.nth m.text i) then
-             Format.sprintf "%s" (typed_style ch)
+             Format.sprintf "%s" (Styles.typed ch)
            else
-             Format.sprintf "%s" (error_style ch))
+             Format.sprintf "%s" (Styles.error ch))
     |> String.concat ""
   in
   let untyped =
     remaining
-    |> List.map (fun ch -> Format.sprintf "%s" (untyped_style ch))
+    |> List.map (fun ch -> Format.sprintf "%s" (Styles.untyped ch))
     |> String.concat ""
   in
   Format.sprintf "\n\n%s\n\n%s%s\n\n"
