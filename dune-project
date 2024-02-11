@@ -19,7 +19,7 @@
  (name typer)
  (synopsis "A short synopsis")
  (description "A longer description")
- (depends ocaml dune spices minttea)
+ (depends ocaml dune spices minttea leaves)
  (tags
   (topics "to describe" your project)))
 
