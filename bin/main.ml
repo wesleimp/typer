@@ -26,16 +26,26 @@ let initial_model =
         ~trail_char:" " ();
   }
 
-let handle_key_down m key =
-  let typed = m.typed @ [ key ] in
+let update_state typed m =
   let percentage_of x y = Float.div (float_of_int x) (float_of_int y) in
   let progress = percentage_of (List.length typed) (List.length m.text) in
   let progress_bar = Progress.set_progress m.progress_bar progress in
   {progress_bar; typed; text = m.text}
 
+let handle_key_down m key =
+  let typed = m.typed @ [ key ] in
+  update_state typed m
+
+let handle_backspace m =
+  let typed =
+    m.typed |> List.to_seq |> Seq.take (List.length m.typed - 1) |> List.of_seq
+  in
+  update_state typed m
+
 let update event m =
   match event with
   | Event.KeyDown Escape -> (m, Command.Quit)
+  | Event.KeyDown Backspace -> (handle_backspace m, Command.Noop)
   | Event.KeyDown Space -> (handle_key_down m " ", Command.Noop)
   | Event.KeyDown (Key k) -> (handle_key_down m k, Command.Noop)
   | _ -> (m, Command.Noop)
